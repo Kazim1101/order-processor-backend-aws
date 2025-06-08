@@ -1,0 +1,11 @@
+rootProject.name = 'order-processor-backend-aws'
+
+include(
+        "orderprocessor",
+        "infrastructure",
+        "placeorder"
+)
+
+project(":infrastructure").projectDir = file("infrastructure")
+project(":orderprocessor").projectDir = file("functions/orderprocessor")
+project(":placeorder").projectDir = file("functions/placeorder")
