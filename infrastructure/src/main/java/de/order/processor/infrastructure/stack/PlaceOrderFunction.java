@@ -53,7 +53,7 @@ public class PlaceOrderFunction extends Construct {
 
         new LogGroup(this, "LogGroup", LogGroupProps.builder()
             .logGroupName("/aws/lambda/" + function.getFunctionName())
-            .retention(RetentionDays.FIVE_DAYS)
+            .retention(DEFAULT_LOG_RETENTION)
             .encryptionKey(props.applicationKey)
             .removalPolicy(RemovalPolicy.DESTROY)
             .build());

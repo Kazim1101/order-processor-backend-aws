@@ -20,7 +20,7 @@ public class Util {
                 Map.of("id", "10", "category", "Appetizers", "name", "Deviled Eggs", "description", "Classic deviled eggs with a tangy twist", "price", "€4.25", "imageUrl", "https://images.unsplash.com/photo-1467003909585-2f8a72700288"),
 
                 // Main Course
-                Map.of("id", "11", "category", "Main Course", "name", "Grilled Chicken", "description", "Juicy grilled chicken with herbs", "price", "€12.99", "imageUrl", "https://images.unsplash.com/photo-1514512364185-4c2b678c5a16"),
+                Map.of("id", "11", "category", "Main Course", "name", "Grilled Chicken", "description", "Juicy grilled chicken with herbs", "price", "€12.99", "imageUrl", "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"),
                 Map.of("id", "12", "category", "Main Course", "name", "Beef Steak", "description", "Tender grilled steak with sides", "price", "€18.99", "imageUrl", "https://images.unsplash.com/photo-1551183053-bf91a1d81141"),
                 Map.of("id", "13", "category", "Main Course", "name", "Salmon Fillet", "description", "Grilled salmon with lemon butter", "price", "€17.50", "imageUrl", "https://images.unsplash.com/photo-1467003909585-2f8a72700288"),
                 Map.of("id", "14", "category", "Main Course", "name", "Chicken Alfredo", "description", "Creamy pasta with grilled chicken", "price", "€13.99", "imageUrl", "https://images.unsplash.com/photo-1467003909585-2f8a72700288"),
@@ -32,11 +32,11 @@ public class Util {
                 Map.of("id", "20", "category", "Main Course", "name", "Stuffed Peppers", "description", "Bell peppers stuffed with beef and rice", "price", "€12.50", "imageUrl", "https://images.unsplash.com/photo-1467003909585-2f8a72700288"),
 
                 // Pizza
-                Map.of("id", "21", "category", "Pizza", "name", "Margherita", "description", "Classic tomato, mozzarella, and basil", "price", "€10.99", "imageUrl", "https://images.unsplash.com/photo-1548365328-8b849e6c7c7e"),
-                Map.of("id", "22", "category", "Pizza", "name", "Pepperoni", "description", "Mozzarella and pepperoni slices", "price", "€11.99", "imageUrl", "https://images.unsplash.com/photo-1548365328-8b849e6c7c7e"),
-                Map.of("id", "23", "category", "Pizza", "name", "BBQ Chicken", "description", "Grilled chicken and BBQ sauce", "price", "€12.99", "imageUrl", "https://images.unsplash.com/photo-1548365328-8b849e6c7c7e"),
+                Map.of("id", "21", "category", "Pizza", "name", "Margherita", "description", "Classic tomato, mozzarella, and basil", "price", "€10.99", "imageUrl", "https://media.istockphoto.com/id/2023102269/de/foto/pizza-mit-frischem-basilikum-tomaten-und-k%C3%A4se-auf-holzplatte.jpg?s=1024x1024&w=is&k=20&c=bXbMWABUKjc0AZDUKdmsvOVfzrVQCWiR9yMCq2vqL9c="),
+                Map.of("id", "22", "category", "Pizza", "name", "Pepperoni", "description", "Mozzarella and pepperoni slices", "price", "€11.99", "imageUrl", "https://media.istockphoto.com/id/2170408203/de/foto/pizza-with-prosciutto-cotto-ham-and-mushrooms.jpg?s=2048x2048&w=is&k=20&c=XtFRo7633a0642Ov707dvtRtUm0DLuoM3U3IsHkUXd4="),
+                Map.of("id", "23", "category", "Pizza", "name", "BBQ Chicken", "description", "Grilled chicken and BBQ sauce", "price", "€12.99", "imageUrl", "https://cdn.pixabay.com/photo/2017/12/10/14/47/pizza-3010062_1280.jpg"),
                 Map.of("id", "24", "category", "Pizza", "name", "Veggie Delight", "description", "Mixed vegetables and cheese", "price", "€11.50", "imageUrl", "https://images.unsplash.com/photo-1548365328-8b849e6c7c7e"),
-                Map.of("id", "25", "category", "Pizza", "name", "Hawaiian", "description", "Ham and pineapple combo", "price", "€12.25", "imageUrl", "https://images.unsplash.com/photo-1548365328-8b849e6c7c7e"),
+                Map.of("id", "25", "category", "Pizza", "name", "Hawaiian", "description", "Ham and pineapple combo", "price", "€12.25", "imageUrl", "https://media.istockphoto.com/id/2148261229/de/foto/pizza-essen-und-lustige-gesichter.jpg?s=2048x2048&w=is&k=20&c=sbx2WopAggKB7X1v7QNWdtbA2edl5hAMgyov3Bknwnw="),
 
                 // Pasta
                 Map.of("id", "26", "category", "Pasta", "name", "Spaghetti Bolognese", "description", "Traditional meat sauce pasta", "price", "€11.99", "imageUrl", "https://images.unsplash.com/photo-1467003909585-2f8a72700288"),
