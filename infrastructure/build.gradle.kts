@@ -7,8 +7,11 @@ dependencies {
   implementation("software.amazon.awscdk:aws-cdk-lib:2.111.0")
   implementation("software.constructs:constructs:10.1.120")
   implementation("com.amazonaws:aws-java-sdk-cloudformation:1.12.120")
-
   compileOnly("org.projectlombok:lombok:1.18.24")
+
+  // WebSocket API & Integrations - alpha modules
+  implementation("software.amazon.awscdk:apigatewayv2-alpha:2.111.0-alpha.0")
+  implementation("software.amazon.awscdk:apigatewayv2-integrations-alpha:2.111.0-alpha.0")
 
   annotationProcessor("org.projectlombok:lombok:1.18.24")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.24")

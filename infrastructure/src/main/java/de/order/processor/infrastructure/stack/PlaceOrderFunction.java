@@ -13,6 +13,7 @@ import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.LogGroupProps;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public class PlaceOrderFunction extends Construct {
         this.function = new Function(this, id, FunctionProps.builder()
             .functionName(id)
             .runtime(Runtime.JAVA_21)
-            .memorySize(128)
+            .memorySize(512)
             .architecture(Architecture.ARM_64)
             .timeout(Duration.seconds(60))
             //Todo: Craete a VPC
@@ -47,14 +48,14 @@ public class PlaceOrderFunction extends Construct {
             .role(buildRole(this))
             .environment(Map.ofEntries(
                 Map.entry("ORDERS_BUCKET", ordersBucket.getBucketName()),
-                Map.entry("STAGE", STAGE)
+                Map.entry("STAGE", STAGE),
+                Map.entry("CONNECTION_URL", "https://ly6u5pu5o6.execute-api.eu-central-1.amazonaws.com/kzm")
             )).build());
-
 
         new LogGroup(this, "LogGroup", LogGroupProps.builder()
             .logGroupName("/aws/lambda/" + function.getFunctionName())
             .retention(DEFAULT_LOG_RETENTION)
-            .encryptionKey(props.applicationKey)
+//            .encryptionKey(props.applicationKey)
             .removalPolicy(RemovalPolicy.DESTROY)
             .build());
 
@@ -77,10 +78,12 @@ public class PlaceOrderFunction extends Construct {
         return function;
     }
 
+    public IBucket getOrdersBucket() {return ordersBucket;}
+
     @Builder
     @Value
     public static class PlaceOrderFunctionProps {
-        IKey applicationKey;
+//        IKey applicationKey;
     }
 
     private Role buildRole(PlaceOrderFunction scope) {
@@ -89,8 +92,7 @@ public class PlaceOrderFunction extends Construct {
             .managedPolicies(List.of(
                 ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaBasicExecutionRole", "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"),
                 ManagedPolicy.fromManagedPolicyArn(this, "AmazonSQSReadOnlyAccess", "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess"),
-                ManagedPolicy.fromManagedPolicyArn(this, "AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess"),
-                ManagedPolicy.fromManagedPolicyArn(this, "SecretsManagerReadWrite", "arn:aws:iam::aws:policy/SecretsManagerReadWrite"),
+                ManagedPolicy.fromManagedPolicyArn(this, "AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess"), ManagedPolicy.fromManagedPolicyArn(this, "AmazonAPIGatewayInvokeFullAccess", "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"), ManagedPolicy.fromManagedPolicyArn(this, "SecretsManagerReadWrite", "arn:aws:iam::aws:policy/SecretsManagerReadWrite"),
                 ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaVPCAccessExecutionRole", "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole")
             ))
             .inlinePolicies(Map.of(

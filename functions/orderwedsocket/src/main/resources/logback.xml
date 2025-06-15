@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="JsonAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"eventTemplateUri":"classpath:LambdaJsonLayout.json"}</customFields>
+        </encoder>
+    </appender>
+
+    <logger name="JsonLogger" level="INFO" additivity="false">
+        <appender-ref ref="JsonAppender" />
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="JsonAppender" />
+    </root>
+
+</configuration>

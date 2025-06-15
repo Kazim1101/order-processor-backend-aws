@@ -3,9 +3,11 @@ rootProject.name = 'order-processor-backend-aws'
 include(
         "orderprocessor",
         "infrastructure",
-        "placeorder"
+        "placeorder",
+        "orderwedsocket"
 )
 
 project(":infrastructure").projectDir = file("infrastructure")
 project(":orderprocessor").projectDir = file("functions/orderprocessor")
 project(":placeorder").projectDir = file("functions/placeorder")
+project(":orderwedsocket").projectDir = file("functions/orderwedsocket")

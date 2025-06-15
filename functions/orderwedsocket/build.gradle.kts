@@ -24,7 +24,6 @@ dependencies {
     implementation("software.amazon.awssdk:s3:2.31.59")
     implementation("software.amazon.awssdk:apigatewaymanagementapi:2.31.59")
 
-
     aspect("software.amazon.lambda:powertools-logging:1.13.0")
     aspect("software.amazon.lambda:powertools-metrics:1.13.0")
     aspect("software.amazon.lambda:powertools-tracing:1.13.0")

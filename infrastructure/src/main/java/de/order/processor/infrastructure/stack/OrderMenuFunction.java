@@ -30,7 +30,7 @@ public class OrderMenuFunction extends Construct {
         this.function = new Function(this, id, FunctionProps.builder()
             .functionName(id)
             .runtime(Runtime.JAVA_21)
-            .memorySize(128)
+            .memorySize(350)
             .architecture(Architecture.ARM_64)
             .timeout(Duration.seconds(60))
             //Todo: Craete a VPC
@@ -47,7 +47,7 @@ public class OrderMenuFunction extends Construct {
         new LogGroup(this, "LogGroup", LogGroupProps.builder()
             .logGroupName("/aws/lambda/" + function.getFunctionName())
             .retention(DEFAULT_LOG_RETENTION)
-            .encryptionKey(props.applicationKey)
+//            .encryptionKey(props.applicationKey)
             .removalPolicy(RemovalPolicy.DESTROY)
             .build());
 
@@ -70,7 +70,7 @@ public class OrderMenuFunction extends Construct {
     @Builder
     @Value
     public static class PostProcessorFunctionProps {
-        IKey applicationKey;
+//        IKey applicationKey;
     }
 
     private Role buildRole(OrderMenuFunction scope) {
