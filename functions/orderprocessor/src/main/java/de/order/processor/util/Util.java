@@ -7,6 +7,81 @@ public class Util {
 
     public static List<Map<String, Object>> getMenu(){
         return List.of(
+
+                // FRÜHSTÜCK/BREAKFAST
+                Map.of(
+                        "id", "1",
+                        "category", "FRÜHSTÜCK/BREAKFAST",
+                        "name", "130 Klassische Frühstück",
+                        "description", "2 Brötchen, Wurst, Käse, Butter, Konfitüre und 1 gekochtes Ei. Continental mit einen 0,1l Orangensaft und Kaffee nach Wahl. Breakfast sausage, cheese, butter, jam, 1 egg, 0,1 orange juice and 1 Coffee included.",
+                        "price", "€16.00",
+                        "imageUrl", "https://via.placeholder.com/150"
+                ),
+                Map.of(
+                        "id", "2",
+                        "category", "FRÜHSTÜCK/BREAKFAST",
+                        "name", "131 Französisches Frühstück",
+                        "description", "Brötchen, Croissant, Butter, Konfitüre und Honig, und ein Kaffee nach Wahl. French breakfast with roll, Croissant, butter, Jam and honey and a coffee included.",
+                        "price", "€16.00",
+                        "imageUrl", "https://via.placeholder.com/150"
+                ),
+                Map.of(
+                        "id", "3",
+                        "category", "FRÜHSTÜCK/BREAKFAST",
+                        "name", "132 Italienische Omelette",
+                        "description", "Omelette mit Chilliflocken, Kirschtomaten, Bresaola, Basilikum und Kaffee nach Wahl. Omelet with chili flakes, cherry tomatoes, smoked beef and basil, coffee included.",
+                        "price", "€18.50",
+                        "imageUrl", "https://via.placeholder.com/150"
+                ),
+                Map.of(
+                        "id", "4",
+                        "category", "FRÜHSTÜCK/BREAKFAST",
+                        "name", "133 Spanische Omelette",
+                        "description", "Omelette mit Kartoffeln, Zwiebeln, Paprika, Kirschtomaten und Kaffee nach Wahl. Omelet with potatoes, onions, pepper, cherry tomatoes, coffee included.",
+                        "price", "€18.50",
+                        "imageUrl", "https://via.placeholder.com/150"
+                ),
+                Map.of(
+                        "id", "5",
+                        "category", "FRÜHSTÜCK/BREAKFAST",
+                        "name", "136 Frischer Orangensaft",
+                        "description", "Frischer Orangensaft. Fresh orange juice.",
+                        "price", "€7.50",
+                        "imageUrl", "https://via.placeholder.com/150"
+                ),
+
+
+                Map.of(
+                        "id", "101",
+                        "category", "BURGER/BURGER",
+                        "name", "Chicken Filet Burger",
+                        "description", "Knuspriger Hähnchenfilet-Burger mit frischem Salat und Sauce. Crispy chicken fillet burger with fresh lettuce and sauce.",
+                        "sides", List.of("Süßkartoffel/Sweet Potato", "Pommes frites/French fries"),
+                        "price", "€8.90",
+                        "imageUrl", "https://images.unsplash.com/photo-1551183053-bf91a1d81141"
+                ),
+
+                Map.of(
+                        "id", "102",
+                        "category", "BURGER/BURGER",
+                        "name", "Fish Filet Burger",
+                        "description", "Zarter Fischfilet-Burger mit Remoulade und knackigem Salat. Tender fish fillet burger with tartar sauce and crisp lettuce.",
+                        "sides", List.of("Süßkartoffel/Sweet Potato", "Pommes frites/French fries"),
+                        "price", "€9.20",
+                        "imageUrl", "https://images.unsplash.com/photo-1551183053-bf91a1d81141"
+                ),
+
+                Map.of(
+                        "id", "103",
+                        "category", "BURGER/BURGER",
+                        "name", "Beef Steakburger",
+                        "description", "Saftiger Rindersteak-Burger mit Tomate, Zwiebel und BBQ-Sauce. Juicy beef steakburger with tomato, onion, and BBQ sauce.",
+                        "sides", List.of("Süßkartoffel/Sweet Potato", "Pommes frites/French fries"),
+                        "price", "€10.50",
+                        "imageUrl", "https://images.unsplash.com/photo-1551183053-bf91a1d81141"
+                ),
+
+
                 // Appetizers
                 Map.of("id", "1", "category", "Appetizers", "name", "Spring Rolls", "description", "Crispy rolls filled with vegetables", "price", "€5.99", "imageUrl", "https://images.unsplash.com/photo-1504674900247-0877df9cc836"),
                 Map.of("id", "2", "category", "Appetizers", "name", "Garlic Bread", "description", "Toasted bread with garlic and herbs", "price", "€4.50", "imageUrl", "https://images.unsplash.com/photo-1504674900247-0877df9cc836"),

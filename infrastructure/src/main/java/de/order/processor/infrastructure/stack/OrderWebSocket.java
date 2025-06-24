@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Value;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.apigatewayv2.alpha.*;
+import software.amazon.awscdk.services.dynamodb.*;
 import software.amazon.awscdk.services.iam.*;
 import software.amazon.awscdk.services.kms.IKey;
 import software.amazon.awscdk.services.lambda.Function;
@@ -39,6 +40,23 @@ public class OrderWebSocket extends Construct {
     public OrderWebSocket(Construct scope, String id, OrderWebSocketProps props) {
         super(scope, id);
 
+        Table table = Table.Builder.create(this, "OrderTrackingTable")
+                .tableName("OrderTracking")
+                .partitionKey(Attribute.builder()
+                        .name("orderId")
+                        .type(AttributeType.STRING)
+                        .build())
+                .build();
+
+        table.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
+                .indexName("kitchenIndex")
+                .partitionKey(Attribute.builder()
+                        .name("kitchen")
+                        .type(AttributeType.STRING)
+                        .build())
+                .projectionType(ProjectionType.ALL)
+                .build());
+
         Function orderHandler = Function.Builder.create(this, "OrderWebSocketHandler")
                 .runtime(Runtime.JAVA_21)
                 .handler("de.order.processor.Handler::handleRequest")
@@ -46,7 +64,9 @@ public class OrderWebSocket extends Construct {
                 .role(buildRole(this))
                 .timeout(Duration.seconds(60))
                 .environment(Map.ofEntries(
-                        Map.entry("BUCKET_NAME", props.ordersBucket.getBucketName())
+                        Map.entry("BUCKET_NAME", props.ordersBucket.getBucketName()),
+                        Map.entry("ORDER_TRACKING_TABLE_NAME", "OrderTracking"),
+                        Map.entry("KITCHEN_CONNECTION_URL", "https://ly6u5pu5o6.execute-api.eu-central-1.amazonaws.com/kzm")
                 ))
                 .build();
 
@@ -97,7 +117,8 @@ public class OrderWebSocket extends Construct {
                         ManagedPolicy.fromManagedPolicyArn(this, "AmazonSQSReadOnlyAccess", "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess"),
                         ManagedPolicy.fromManagedPolicyArn(this, "AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess"),
                         ManagedPolicy.fromManagedPolicyArn(this, "AmazonAPIGatewayInvokeFullAccess", "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"),
-                        ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaVPCAccessExecutionRole", "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole")
+                        ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaVPCAccessExecutionRole", "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"),
+                        ManagedPolicy.fromManagedPolicyArn(this, "AmazonDynamoDBFullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess")
                 ))
                 .inlinePolicies(Map.of(
                         "allowSocketConnectionInvocation", PolicyDocument.Builder.create()

@@ -49,7 +49,8 @@ public class PlaceOrderFunction extends Construct {
             .environment(Map.ofEntries(
                 Map.entry("ORDERS_BUCKET", ordersBucket.getBucketName()),
                 Map.entry("STAGE", STAGE),
-                Map.entry("CONNECTION_URL", "https://ly6u5pu5o6.execute-api.eu-central-1.amazonaws.com/kzm")
+                Map.entry("KITCHEN_CONNECTION_URL", "https://ly6u5pu5o6.execute-api.eu-central-1.amazonaws.com/kzm"),
+                Map.entry("ORDER_TRACKING_TABLE_NAME", "OrderTracking")
             )).build());
 
         new LogGroup(this, "LogGroup", LogGroupProps.builder()
@@ -93,7 +94,8 @@ public class PlaceOrderFunction extends Construct {
                 ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaBasicExecutionRole", "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"),
                 ManagedPolicy.fromManagedPolicyArn(this, "AmazonSQSReadOnlyAccess", "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess"),
                 ManagedPolicy.fromManagedPolicyArn(this, "AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess"), ManagedPolicy.fromManagedPolicyArn(this, "AmazonAPIGatewayInvokeFullAccess", "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"), ManagedPolicy.fromManagedPolicyArn(this, "SecretsManagerReadWrite", "arn:aws:iam::aws:policy/SecretsManagerReadWrite"),
-                ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaVPCAccessExecutionRole", "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole")
+                ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaVPCAccessExecutionRole", "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"),
+                ManagedPolicy.fromManagedPolicyArn(this, "AmazonDynamoDBFullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess")
             ))
             .inlinePolicies(Map.of(
                 "allowKMSInvocation", PolicyDocument.Builder.create()

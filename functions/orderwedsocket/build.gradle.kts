@@ -22,6 +22,7 @@ dependencies {
     implementation("org.apache.httpcomponents:httpmime:4.5.14")
     implementation("com.amazonaws:aws-lambda-java-events:3.11.0")
     implementation("software.amazon.awssdk:s3:2.31.59")
+    implementation("software.amazon.awssdk:dynamodb:2.31.59")
     implementation("software.amazon.awssdk:apigatewaymanagementapi:2.31.59")
 
     aspect("software.amazon.lambda:powertools-logging:1.13.0")
