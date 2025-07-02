@@ -51,8 +51,8 @@ public class OrderMenuFunction extends Construct {
             .removalPolicy(RemovalPolicy.DESTROY)
             .build());
 
-        RestApi restApi = RestApi.Builder.create(this, "OrderApi")
-                .restApiName("RestaurantOrderApi")
+        RestApi restApi = RestApi.Builder.create(this, "RestaurantOrderApi-" + STAGE)
+                .restApiName("RestaurantOrderApi" + STAGE)
                 .defaultCorsPreflightOptions(CorsOptions.builder()
                         .allowOrigins(Cors.ALL_ORIGINS)
                         .allowMethods(Cors.ALL_METHODS)

@@ -7,8 +7,8 @@ import de.order.processor.util.Util;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 public class Handler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
@@ -17,35 +17,58 @@ public class Handler implements RequestHandler<Map<String, Object>, Map<String, 
 
     @Override
     public Map<String, Object> handleRequest(Map<String, Object> event, Context context) {
-        // Extract query parameters
-        System.out.printf("Received event: %s%n", event);
-        Map<String, String> queryParams = (Map<String, String>) event.get("queryStringParameters");
-        String table = queryParams != null ? queryParams.getOrDefault("table", "unknown") : "unknown";
-        String branch = queryParams != null ? queryParams.getOrDefault("branch", "unknown") : "unknown";
+        logEvent(event);
 
-        // Log to CloudWatch
-        System.out.printf("Received order from table: %s, branch: %s%n", table, branch);
-        context.getLogger().log("Received order from table: " + table + ", branch: " + branch);
+        Map<String, String> queryParams = extractQueryParams(event);
+        String table = queryParams.getOrDefault("table", "unknown");
+        String branch = queryParams.getOrDefault("branch", "unknown");
 
-        Map<String, Object> responseBody = Map.of("menu", Util.getMenu());
+        logOrderInfo(table, branch, context);
 
-        // Build full API Gateway response
+        Map<String, Object> body = buildResponseBody();
+        return buildApiResponse(200, body);
+    }
+
+    private void logEvent(Map<String, Object> event) {
+        log.info("Received event: {}", event);
+    }
+
+    private Map<String, String> extractQueryParams(Map<String, Object> event) {
+        return Optional.ofNullable((Map<String, String>) event.get("queryStringParameters"))
+                .orElseGet(HashMap::new);
+    }
+
+    private void logOrderInfo(String table, String branch, Context context) {
+        String message = String.format("Received order from table: %s, branch: %s", table, branch);
+        log.info(message);
+        context.getLogger().log(message);
+    }
+
+    private Map<String, Object> buildResponseBody() {
+        return Map.of("menu", Util.getMenu());
+    }
+
+    private Map<String, Object> buildApiResponse(int statusCode, Map<String, Object> body) {
         Map<String, Object> response = new HashMap<>();
-        response.put("statusCode", 200);
-        response.put("headers", Map.of(
+        response.put("statusCode", statusCode);
+        response.put("headers", getDefaultHeaders());
+        response.put("body", toJson(body));
+        return response;
+    }
+
+    private Map<String, String> getDefaultHeaders() {
+        return Map.of(
                 "Access-Control-Allow-Origin", "*",
                 "Access-Control-Allow-Methods", "*",
                 "Content-Type", "application/json"
-        ));
-        response.put("body", toJson(responseBody));
-
-        return response;
+        );
     }
 
     private String toJson(Object object) {
         try {
             return objectMapper.writeValueAsString(object);
         } catch (Exception e) {
+            log.error("Failed to serialize object to JSON", e);
             throw new RuntimeException("Failed to convert to JSON", e);
         }
     }

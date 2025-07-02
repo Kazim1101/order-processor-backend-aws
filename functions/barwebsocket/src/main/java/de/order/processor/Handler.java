@@ -36,15 +36,14 @@ import java.util.stream.Collectors;
 public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Object> {
 
     private static final Region REGION = Region.EU_CENTRAL_1;
-    private static final String OBJECT_KEY = "connection_ids/curr_kitchen_item_connection_id.txt";
+    private static final String OBJECT_KEY = "connection_ids/curr_bar_item_connection_id.txt";
+    private static final String TABLE_NAME = System.getenv("ORDER_TRACKING_TABLE_NAME");
+    private static final String BUCKET_NAME = System.getenv("BUCKET_NAME");
+    private static final String BAR_CONNECTION_URL = System.getenv("BAR_CONNECTION_URL");
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final S3Client s3Client = S3Client.create();
     private final DynamoDbClient dynamoDb = DynamoDbClient.builder().region(REGION).build();
-
-    private static final String TABLE_NAME = System.getenv("ORDER_TRACKING_TABLE_NAME");
-    private final String BUCKET_NAME = System.getenv("BUCKET_NAME");
-    private static final String KITCHEN_CONNECTION_URL = System.getenv("KITCHEN_CONNECTION_URL");
 
     @Override
     public Object handleRequest(APIGatewayV2WebSocketEvent event, Context context) {
@@ -68,7 +67,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
             }
 
         } catch (Exception e) {
-            log.error("Error processing WebSocket event", e);
+            log.error("Error processing WebSocket event: {}", e.getMessage(), e);
             return Map.of("statusCode", 500);
         }
         return Map.of("statusCode", 200);
@@ -76,7 +75,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
 
     private void handleConnect(String connectionId) {
         if (connectionId == null || connectionId.isEmpty()) {
-            log.warn("Missing connectionId for CONNECT event");
+            log.warn("Missing connectionId in CONNECT event");
             return;
         }
         PutObjectRequest putReq = PutObjectRequest.builder()
@@ -93,80 +92,91 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
                 .key(OBJECT_KEY)
                 .build();
         s3Client.deleteObject(delReq);
-        log.info("Deleted connectionId from S3");
+        log.info("Deleted stored connectionId");
     }
 
     private void handleMessage(String body, String connectionId) throws Exception {
-        KitchenOrdersEvent event = MAPPER.readValue(body, KitchenOrdersEvent.class);
-        if ("loadKitchenOrders".equalsIgnoreCase(event.getAction())) {
-            loadPendingOrders(connectionId);
+        KitchenOrdersEvent action = MAPPER.readValue(body, KitchenOrdersEvent.class);
+        log.info("Received KitchenOrdersEvent: {}", action);
+
+        if ("loadBarOrders".equalsIgnoreCase(action.getAction())) {
+            loadPendingOrdersFromS3(connectionId);
         } else {
-            OrderDone order = MAPPER.readValue(body, OrderDone.class);
-            updateKitchenOrder(order.getPayload().getOrderId());
+            OrderDone orderBody = MAPPER.readValue(body, OrderDone.class);
+            updateKitchenOrder(orderBody.getPayload().getOrderId());
         }
     }
 
-    private void loadPendingOrders(String connectionId) {
-        QueryRequest request = QueryRequest.builder()
+    private void loadPendingOrdersFromS3(String connectionId) {
+        QueryRequest queryRequest = QueryRequest.builder()
                 .tableName(TABLE_NAME)
-                .indexName("kitchenIndex")
-                .keyConditionExpression("kitchen = :status")
+                .indexName("barIndex")
+                .keyConditionExpression("bar = :status")
                 .expressionAttributeValues(Map.of(":status", AttributeValue.builder().s("pending").build()))
                 .build();
 
-        QueryResponse response = dynamoDb.query(request);
+        QueryResponse response = dynamoDb.query(queryRequest);
 
         for (Map<String, AttributeValue> item : response.items()) {
             String key = item.get("key").s();
             try (ResponseInputStream<?> s3Object = s3Client.getObject(GetObjectRequest.builder().bucket(BUCKET_NAME).key(key).build())) {
-                PlaceOrder fullOrder = MAPPER.readValue(s3Object, PlaceOrder.class);
-                List<PlaceOrder.Item> kitchenItems = filterKitchenItems(fullOrder.getBody().getItems());
-                if (!kitchenItems.isEmpty()) {
-                    PlaceOrder kitchenOrder = createOrderPayload(fullOrder.getOrderId(), fullOrder.getTable(), fullOrder.getBody(), kitchenItems);
-                    Thread.sleep(1000); // simulate delay
-                    sendToWebSocket(connectionId, MAPPER.writeValueAsString(kitchenOrder));
+                PlaceOrder placeOrder = MAPPER.readValue(s3Object, PlaceOrder.class);
+                List<PlaceOrder.Item> barItems = filterBarItems(placeOrder.getBody().getItems());
+
+                if (!barItems.isEmpty()) {
+                    PlaceOrder kitchenOrder = createOrderPayload(placeOrder.getOrderId(), placeOrder.getTable(), placeOrder.getBody(), barItems);
+                    Thread.sleep(1000);
+                    sendToBarWebSocket(connectionId, MAPPER.writeValueAsString(kitchenOrder));
                 }
             } catch (Exception e) {
-                log.error("Failed to load order from S3 for key: {}", key, e);
+                log.error("Error reading S3 object for orderId {}: {}", key, e.getMessage(), e);
             }
         }
     }
 
-    private void sendToWebSocket(String connectionId, String message) {
+    private void sendToBarWebSocket(String connectionId, String messageJson) {
         try (ApiGatewayManagementApiClient client = ApiGatewayManagementApiClient.builder()
-                .endpointOverride(URI.create(KITCHEN_CONNECTION_URL))
+                .endpointOverride(URI.create(BAR_CONNECTION_URL))
                 .region(REGION)
                 .build()) {
+
             client.postToConnection(PostToConnectionRequest.builder()
                     .connectionId(connectionId)
-                    .data(SdkBytes.fromByteBuffer(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8))))
+                    .data(SdkBytes.fromByteBuffer(ByteBuffer.wrap(messageJson.getBytes(StandardCharsets.UTF_8))))
                     .build());
-            log.info("Sent message to connectionId: {}", connectionId);
+
+            log.info("Sent message to WebSocket connection: {}", connectionId);
+
         } catch (GoneException e) {
-            log.warn("Connection gone for id: {}", connectionId);
+            log.warn("WebSocket connection gone: {}", e.getMessage());
         }
     }
 
     private void updateKitchenOrder(String orderId) {
-        UpdateItemRequest updateRequest = UpdateItemRequest.builder()
+        UpdateItemRequest request = UpdateItemRequest.builder()
                 .tableName(TABLE_NAME)
                 .key(Map.of("orderId", AttributeValue.builder().s(orderId).build()))
-                .updateExpression("SET kitchen = :k")
-                .expressionAttributeValues(Map.of(":k", AttributeValue.builder().s("done").build()))
+                .updateExpression("SET bar = :b")
+                .expressionAttributeValues(Map.of(":b", AttributeValue.builder().s("done").build()))
                 .build();
-        dynamoDb.updateItem(updateRequest);
-        log.info("Updated order {} to kitchen=done", orderId);
+        dynamoDb.updateItem(request);
+        log.info("Updated bar order to DONE for OrderID: {}", orderId);
     }
 
-    private List<PlaceOrder.Item> filterKitchenItems(List<PlaceOrder.Item> items) {
-        return items.stream().filter(item -> !isBarItem(item.getCategory())).collect(Collectors.toList());
+    private List<PlaceOrder.Item> filterBarItems(List<PlaceOrder.Item> items) {
+        return items.stream()
+                .filter(item -> isBarOrder(item.getCategory()))
+                .collect(Collectors.toList());
     }
 
-    private boolean isBarItem(String category) {
-        return List.of("Soft Drinks", "Säfte / Juices", "Heiße Getränke / Hot Drinks", "BIER / BEER",
-                        "LONG DRINKS", "WEISSWEINE / WHITE WINES", "ROT WEINE / RED WINES", "ROSEWEIN / ROSE WINES",
-                        "WEINE AUS ITALIEN / WEIN FROM ITALY", "ROTWEINE AUS ITALY / RED WINES FROM ITALY")
-                .stream().anyMatch(c -> c.equalsIgnoreCase(category));
+    private boolean isBarOrder(String category) {
+        return List.of(
+                "Soft Drinks", "Säfte / Juices", "Heiße Getränke / Hot Drinks",
+                "BIER / BEER", "LONG DRINKS", "WEISSWEINE / WHITE WINES",
+                "ROT WEINE / RED WINES", "ROSEWEIN / ROSE WINES",
+                "WEINE AUS ITALIEN / WEIN FROM ITALY",
+                "ROTWEINE AUS ITALY / RED WINES FROM ITALY"
+        ).stream().anyMatch(cat -> cat.equalsIgnoreCase(category));
     }
 
     private PlaceOrder createOrderPayload(String orderId, String table, PlaceOrder.OrderBody originalBody, List<PlaceOrder.Item> items) {
@@ -175,9 +185,9 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
         newBody.setOrderMetaData(originalBody.getOrderMetaData());
 
         PlaceOrder order = new PlaceOrder();
+        order.setOrderId(orderId);
         order.setTable(table);
         order.setBody(newBody);
-        order.setOrderId(orderId);
         return order;
     }
 }

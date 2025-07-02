@@ -23,6 +23,10 @@ public class OrderProcessorStack extends Stack {
         var placeOrder = new PlaceOrderFunction(this, "place-order-" + STAGE, PlaceOrderFunction.PlaceOrderFunctionProps.builder()
             .build());
 
+        var orderService = new OrderServiceFunction(this, "order-service-" + STAGE, OrderServiceFunction.OrderServiceFunctionProps.builder()
+            .ordersBucket(placeOrder.getOrdersBucket())
+                .build());
+
         var orderWebSocket = new OrderWebSocket(this, "order-websocket-" + STAGE, OrderWebSocket.OrderWebSocketProps.builder()
             .orderProcessorfunction(postProcessor.getFunction())
             .placeOrderFunction(placeOrder.getFunction())

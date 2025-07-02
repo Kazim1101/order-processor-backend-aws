@@ -2,11 +2,11 @@ package de.order.processor.infrastructure.stack;
 
 import lombok.Builder;
 import lombok.Value;
+import org.jetbrains.annotations.NotNull;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.apigatewayv2.alpha.*;
 import software.amazon.awscdk.services.dynamodb.*;
 import software.amazon.awscdk.services.iam.*;
-import software.amazon.awscdk.services.kms.IKey;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
@@ -26,22 +26,11 @@ import static software.amazon.awscdk.services.iam.Effect.ALLOW;
 
 public class OrderWebSocket extends Construct {
 
-    private final String webSocketUrl;
-    private final String postToConnectionUrl;
-
-    public String getWebSocketUrl() {
-        return webSocketUrl;
-    }
-
-    public String getPostToConnectionUrl() {
-        return postToConnectionUrl;
-    }
-
     public OrderWebSocket(Construct scope, String id, OrderWebSocketProps props) {
         super(scope, id);
 
-        Table table = Table.Builder.create(this, "OrderTrackingTable")
-                .tableName("OrderTracking")
+        Table table = Table.Builder.create(this, "OrderTrackingTable" + STAGE)
+                .tableName("OrderTracking" + STAGE)
                 .partitionKey(Attribute.builder()
                         .name("orderId")
                         .type(AttributeType.STRING)
@@ -57,68 +46,116 @@ public class OrderWebSocket extends Construct {
                 .projectionType(ProjectionType.ALL)
                 .build());
 
-        Function orderHandler = Function.Builder.create(this, "OrderWebSocketHandler")
+        table.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
+                .indexName("barIndex")
+                .partitionKey(Attribute.builder()
+                        .name("bar")
+                        .type(AttributeType.STRING)
+                        .build())
+                .projectionType(ProjectionType.ALL)
+                .build());
+
+        table.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
+                .indexName("serviceIndex")
+                .partitionKey(Attribute.builder()
+                        .name("service")
+                        .type(AttributeType.STRING)
+                        .build())
+                .projectionType(ProjectionType.ALL)
+                .build());
+
+        Function kitchenHandler = Function.Builder.create(this, "OrderWebSocketHandler" + STAGE)
                 .runtime(Runtime.JAVA_21)
                 .handler("de.order.processor.Handler::handleRequest")
                 .code(Code.fromAsset("../functions/orderwedsocket/build/libs/lambda.jar"))
-                .role(buildRole(this))
+                .role(buildRole(this, "KitchenHandler"))
                 .timeout(Duration.seconds(60))
                 .environment(Map.ofEntries(
                         Map.entry("BUCKET_NAME", props.ordersBucket.getBucketName()),
-                        Map.entry("ORDER_TRACKING_TABLE_NAME", "OrderTracking"),
-                        Map.entry("KITCHEN_CONNECTION_URL", "https://ly6u5pu5o6.execute-api.eu-central-1.amazonaws.com/kzm")
+                        Map.entry("ORDER_TRACKING_TABLE_NAME", "OrderTracking" + STAGE),
+                        Map.entry("KITCHEN_CONNECTION_URL", "https://7vf1ii741a.execute-api.eu-central-1.amazonaws.com/kzm")
                 ))
                 .build();
 
-        WebSocketApi webSocketApi = WebSocketApi.Builder.create(this, "OrderWebSocketApi")
-                .apiName("order-websocket-api")
+        WebSocketApi kitchenWebSocketApi = createWebSocketApi("KitchenWebSocketApi-", kitchenHandler);
+
+        Function barHandler = Function.Builder.create(this, "BarWebSocketHandler" + STAGE)
+                .runtime(Runtime.JAVA_21)
+                .handler("de.order.processor.Handler::handleRequest")
+                .code(Code.fromAsset("../functions/barwebsocket/build/libs/lambda.jar"))
+                .role(buildRole(this, "BarHandler"))
+                .timeout(Duration.seconds(60))
+                .environment(Map.ofEntries(
+                        Map.entry("BUCKET_NAME", props.ordersBucket.getBucketName()),
+                        Map.entry("ORDER_TRACKING_TABLE_NAME", "OrderTracking" + STAGE),
+                        Map.entry("BAR_CONNECTION_URL", "https://ggw3hxpaa1.execute-api.eu-central-1.amazonaws.com/kzm")
+                ))
                 .build();
 
-        WebSocketRouteIntegration connectIntegration = new WebSocketLambdaIntegration("ConnectIntegration", orderHandler);
-        WebSocketRouteIntegration disconnectIntegration = new WebSocketLambdaIntegration("DisconnectIntegration", orderHandler);
-        WebSocketRouteIntegration defaultIntegration = new WebSocketLambdaIntegration("DefaultIntegration", orderHandler);
+        WebSocketApi barWebSocketApi = createWebSocketApi("BarWebSocketApi-", barHandler);
 
-        WebSocketRoute.Builder.create(this, "ConnectRoute")
+//        Function serviceHandler = Function.Builder.create(this, "OrderServiceHandler" + STAGE)
+//                .runtime(Runtime.JAVA_21)
+//                .handler("de.order.processor.Handler::handleRequest")
+//                .code(Code.fromAsset("../functions/orderservice/build/libs/lambda.jar"))
+//                .role(buildRole(this, "ServiceHandler"))
+//                .timeout(Duration.seconds(60))
+//                .environment(Map.ofEntries(
+//                        Map.entry("BUCKET_NAME", props.ordersBucket.getBucketName()),
+//                        Map.entry("ORDER_TRACKING_TABLE_NAME", "OrderTracking" + STAGE),
+//                        Map.entry("SERVICE_CONNECTION_URL", "https://e5zeq8vj9d.execute-api.eu-central-1.amazonaws.com/kzm")
+//                ))
+//                .build();
+//
+//        WebSocketApi OrderServiceApi = createWebSocketApi("OrderServiceApiApi-", serviceHandler);
+    }
+
+    private @NotNull WebSocketApi createWebSocketApi(String prefix, Function handler) {
+        WebSocketApi webSocketApi = WebSocketApi.Builder.create(this, prefix + "Api" + STAGE)
+                .apiName(prefix + STAGE)
+                .build();
+
+        WebSocketRouteIntegration connectIntegration = new WebSocketLambdaIntegration(prefix + "ConnectIntegration", handler);
+        WebSocketRouteIntegration disconnectIntegration = new WebSocketLambdaIntegration(prefix + "DisconnectIntegration", handler);
+        WebSocketRouteIntegration defaultIntegration = new WebSocketLambdaIntegration(prefix + "DefaultIntegration", handler);
+
+        WebSocketRoute.Builder.create(this, prefix + "ConnectRoute" + STAGE)
                 .webSocketApi(webSocketApi)
                 .routeKey("$connect")
                 .integration(connectIntegration)
                 .build();
 
-        WebSocketRoute.Builder.create(this, "DisconnectRoute")
+        WebSocketRoute.Builder.create(this, prefix + "DisconnectRoute" + STAGE)
                 .webSocketApi(webSocketApi)
                 .routeKey("$disconnect")
                 .integration(disconnectIntegration)
                 .build();
 
-        WebSocketRoute.Builder.create(this, "DefaultRoute")
+        WebSocketRoute.Builder.create(this, prefix + "DefaultRoute" + STAGE)
                 .webSocketApi(webSocketApi)
                 .routeKey("$default")
                 .integration(defaultIntegration)
                 .build();
 
-        WebSocketStage stage = WebSocketStage.Builder.create(this, STAGE)
+        WebSocketStage.Builder.create(this, prefix + "Stage" + STAGE)
                 .webSocketApi(webSocketApi)
                 .stageName(STAGE)
                 .autoDeploy(true)
                 .build();
 
-        // Construct WebSocket and POST URL
-        this.webSocketUrl = "wss://" + webSocketApi.getApiId() + ".execute-api." + REGION + ".amazonaws.com/" + STAGE;
-        // POST URL for sending messages to connected clients
-        this.postToConnectionUrl = "https://" + webSocketApi.getApiId() + ".execute-api." + REGION + ".amazonaws.com/" + STAGE;
-
+        return webSocketApi;
     }
 
-    private Role buildRole(OrderWebSocket scope) {
-        return Role.Builder.create(scope, "socketHandlerRole")
+    private Role buildRole(OrderWebSocket scope, String id) {
+        return Role.Builder.create(scope, "socketHandlerRole" + id)
                 .assumedBy(new ServicePrincipal("lambda.amazonaws.com"))
                 .managedPolicies(List.of(
-                        ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaBasicExecutionRole", "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"),
-                        ManagedPolicy.fromManagedPolicyArn(this, "AmazonSQSReadOnlyAccess", "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess"),
-                        ManagedPolicy.fromManagedPolicyArn(this, "AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonS3FullAccess"),
-                        ManagedPolicy.fromManagedPolicyArn(this, "AmazonAPIGatewayInvokeFullAccess", "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"),
-                        ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaVPCAccessExecutionRole", "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"),
-                        ManagedPolicy.fromManagedPolicyArn(this, "AmazonDynamoDBFullAccess", "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess")
+                        ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaBasicExecutionRole" + id, "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"),
+                        ManagedPolicy.fromManagedPolicyArn(this, "AmazonSQSReadOnlyAccess" + id, "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess"),
+                        ManagedPolicy.fromManagedPolicyArn(this, "AmazonS3FullAccess" + id, "arn:aws:iam::aws:policy/AmazonS3FullAccess"),
+                        ManagedPolicy.fromManagedPolicyArn(this, "AmazonAPIGatewayInvokeFullAccess" + id, "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"),
+                        ManagedPolicy.fromManagedPolicyArn(this, "AWSLambdaVPCAccessExecutionRole" + id, "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"),
+                        ManagedPolicy.fromManagedPolicyArn(this, "AmazonDynamoDBFullAccess" + id, "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess")
                 ))
                 .inlinePolicies(Map.of(
                         "allowSocketConnectionInvocation", PolicyDocument.Builder.create()

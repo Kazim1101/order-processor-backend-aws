@@ -4,10 +4,14 @@ include(
         "orderprocessor",
         "infrastructure",
         "placeorder",
-        "orderwedsocket"
+        "orderwedsocket",
+        "barwebsocket",
+        "orderservice",
 )
 
 project(":infrastructure").projectDir = file("infrastructure")
 project(":orderprocessor").projectDir = file("functions/orderprocessor")
 project(":placeorder").projectDir = file("functions/placeorder")
 project(":orderwedsocket").projectDir = file("functions/orderwedsocket")
+project(":barwebsocket").projectDir = file("functions/barwebsocket")
+project(":orderservice").projectDir = file("functions/orderservice")
