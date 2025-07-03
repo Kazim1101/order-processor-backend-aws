@@ -171,7 +171,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
 
     private boolean isBarOrder(String category) {
         return List.of(
-                "Soft Drinks", "Säfte / Juices", "Heiße Getränke / Hot Drinks",
+                "SOFT DRINKS", "Säfte / Juices", "Heiße Getränke / Hot Drinks",
                 "BIER / BEER", "LONG DRINKS", "WEISSWEINE / WHITE WINES",
                 "ROT WEINE / RED WINES", "ROSEWEIN / ROSE WINES",
                 "WEINE AUS ITALIEN / WEIN FROM ITALY",

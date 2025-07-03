@@ -163,7 +163,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
     }
 
     private boolean isBarItem(String category) {
-        return List.of("Soft Drinks", "Säfte / Juices", "Heiße Getränke / Hot Drinks", "BIER / BEER",
+        return List.of("SOFT DRINKS", "Säfte / Juices", "Heiße Getränke / Hot Drinks", "BIER / BEER",
                         "LONG DRINKS", "WEISSWEINE / WHITE WINES", "ROT WEINE / RED WINES", "ROSEWEIN / ROSE WINES",
                         "WEINE AUS ITALIEN / WEIN FROM ITALY", "ROTWEINE AUS ITALY / RED WINES FROM ITALY")
                 .stream().anyMatch(c -> c.equalsIgnoreCase(category));
