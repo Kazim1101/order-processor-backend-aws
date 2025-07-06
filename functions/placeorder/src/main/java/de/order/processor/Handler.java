@@ -96,16 +96,23 @@ public class Handler implements RequestHandler<Map<String, Object>, Map<String, 
 
     private List<PlaceOrder.Item> filterItems(List<PlaceOrder.Item> items, boolean isBar) {
         return items.stream()
-                .filter(item -> isBar == isBarCategory(item.getCategory()))
+                .filter(item -> isBar == isBarItem(item.getCategory()))
                 .collect(Collectors.toList());
     }
 
-    private boolean isBarCategory(String category) {
-        return Set.of(
-                "SOFT DRINKS", "Säfte / Juices", "Heiße Getränke / Hot Drinks", "BIER / BEER",
-                "LONG DRINKS", "WEISSWEINE / WHITE WINES", "ROT WEINE / RED WINES", "ROSEWEIN / ROSE WINES",
-                "WEINE AUS ITALIEN / WINE FROM ITALY", "ROTWEINE AUS ITALY / RED WINES FROM ITALY"
-        ).contains(category.toUpperCase(Locale.ROOT));
+//    private boolean isBarCategory(String category) {
+//        return Set.of(
+//                "SOFT DRINKS", "SÄFTE / JUICES", "HEIßE GETRÄNKE / HOT DRINKS", "BIER / BEER",
+//                "LONG DRINKS", "WEISSWEINE / WHITE WINES", "ROT WEINE / RED WINES", "ROSEWEIN / ROSE WINES",
+//                "WEINE AUS ITALIEN / WINE FROM ITALY", "ROTWEINE AUS ITALY / RED WINES FROM ITALY"
+//        ).contains(category.toUpperCase(Locale.ROOT));
+//    }
+
+    private boolean isBarItem(String category) {
+        return List.of("SOFT DRINKS", "SÄFTE / JUICES", "HEIßE GETRÄNKE / HOT DRINKS", "BIER / BEER",
+                        "LONG DRINKS", "WEISSWEINE / WHITE WINES", "ROT WEINE / RED WINES", "ROSEWEIN / ROSE WINES",
+                        "WEINE AUS ITALIEN / WEIN FROM ITALY", "ROTWEINE AUS ITALY / RED WINES FROM ITALY")
+                .stream().anyMatch(c -> c.equalsIgnoreCase(category));
     }
 
     private String generateOrderId() {

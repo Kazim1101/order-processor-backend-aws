@@ -52,6 +52,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
             String eventType = event.getRequestContext().getEventType();
             String connectionId = event.getRequestContext().getConnectionId();
 
+            log.info("Received WebSocket event: {}", eventType);
             switch (eventType.toUpperCase()) {
                 case "CONNECT":
                     handleConnect(connectionId);
@@ -68,9 +69,10 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
             }
 
         } catch (Exception e) {
-            log.error("Error processing WebSocket event", e);
+            log.error("Error processing WebSocket event ", e);
             return Map.of("statusCode", 500);
         }
+        log.info("Kitchen webSocket event processed successfully");
         return Map.of("statusCode", 200);
     }
 
@@ -98,7 +100,8 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
 
     private void handleMessage(String body, String connectionId) throws Exception {
         KitchenOrdersEvent event = MAPPER.readValue(body, KitchenOrdersEvent.class);
-        if ("loadKitchenOrders".equalsIgnoreCase(event.getAction())) {
+        if ("loadKitchenOrders".equalsIgnoreCase(event.getAction()) ||
+            "resyncKitchenOrders".equalsIgnoreCase(event.getAction())){
             loadPendingOrders(connectionId);
         } else {
             OrderDone order = MAPPER.readValue(body, OrderDone.class);
@@ -115,6 +118,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
                 .build();
 
         QueryResponse response = dynamoDb.query(request);
+        log.info("Loading pending orders from DynamoDB, found {} items", response.items().size());
 
         for (Map<String, AttributeValue> item : response.items()) {
             String key = item.get("key").s();
@@ -122,6 +126,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
                 PlaceOrder fullOrder = MAPPER.readValue(s3Object, PlaceOrder.class);
                 List<PlaceOrder.Item> kitchenItems = filterKitchenItems(fullOrder.getBody().getItems());
                 if (!kitchenItems.isEmpty()) {
+                    log.info("Processing orderId: {}, table: {}, items: {}", fullOrder.getOrderId(), fullOrder.getTable(), kitchenItems.size());
                     PlaceOrder kitchenOrder = createOrderPayload(fullOrder.getOrderId(), fullOrder.getTable(), fullOrder.getBody(), kitchenItems);
                     Thread.sleep(1000); // simulate delay
                     sendToWebSocket(connectionId, MAPPER.writeValueAsString(kitchenOrder));
@@ -163,7 +168,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
     }
 
     private boolean isBarItem(String category) {
-        return List.of("SOFT DRINKS", "Säfte / Juices", "Heiße Getränke / Hot Drinks", "BIER / BEER",
+        return List.of("SOFT DRINKS", "SÄFTE / JUICES", "HEIßE GETRÄNKE / HOT DRINKS", "BIER / BEER",
                         "LONG DRINKS", "WEISSWEINE / WHITE WINES", "ROT WEINE / RED WINES", "ROSEWEIN / ROSE WINES",
                         "WEINE AUS ITALIEN / WEIN FROM ITALY", "ROTWEINE AUS ITALY / RED WINES FROM ITALY")
                 .stream().anyMatch(c -> c.equalsIgnoreCase(category));

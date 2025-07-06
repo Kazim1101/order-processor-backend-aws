@@ -7,10 +7,8 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.apigatewayv2.alpha.*;
 import software.amazon.awscdk.services.dynamodb.*;
 import software.amazon.awscdk.services.iam.*;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.*;
 import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 import software.amazon.awscdk.services.apigatewayv2.integrations.alpha.WebSocketLambdaIntegration;
@@ -70,6 +68,7 @@ public class OrderWebSocket extends Construct {
                 .code(Code.fromAsset("../functions/orderwedsocket/build/libs/lambda.jar"))
                 .role(buildRole(this, "KitchenHandler"))
                 .timeout(Duration.seconds(60))
+                .tracing(Tracing.DISABLED)
                 .environment(Map.ofEntries(
                         Map.entry("BUCKET_NAME", props.ordersBucket.getBucketName()),
                         Map.entry("ORDER_TRACKING_TABLE_NAME", "OrderTracking" + STAGE),
@@ -85,6 +84,7 @@ public class OrderWebSocket extends Construct {
                 .code(Code.fromAsset("../functions/barwebsocket/build/libs/lambda.jar"))
                 .role(buildRole(this, "BarHandler"))
                 .timeout(Duration.seconds(60))
+                .tracing(Tracing.DISABLED)
                 .environment(Map.ofEntries(
                         Map.entry("BUCKET_NAME", props.ordersBucket.getBucketName()),
                         Map.entry("ORDER_TRACKING_TABLE_NAME", "OrderTracking" + STAGE),

@@ -51,6 +51,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
             String eventType = event.getRequestContext().getEventType();
             String connectionId = event.getRequestContext().getConnectionId();
 
+            log.info("Received WebSocket event: {}", eventType);
             switch (eventType.toUpperCase()) {
                 case "CONNECT":
                     handleConnect(connectionId);
@@ -70,6 +71,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
             log.error("Error processing WebSocket event: {}", e.getMessage(), e);
             return Map.of("statusCode", 500);
         }
+        log.info("Bar webSocket event processed successfully");
         return Map.of("statusCode", 200);
     }
 
@@ -99,7 +101,8 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
         KitchenOrdersEvent action = MAPPER.readValue(body, KitchenOrdersEvent.class);
         log.info("Received KitchenOrdersEvent: {}", action);
 
-        if ("loadBarOrders".equalsIgnoreCase(action.getAction())) {
+        if ("loadBarOrders".equalsIgnoreCase(action.getAction()) ||
+                "resyncBarOrders".equalsIgnoreCase(action.getAction())) {
             loadPendingOrdersFromS3(connectionId);
         } else {
             OrderDone orderBody = MAPPER.readValue(body, OrderDone.class);
@@ -171,7 +174,7 @@ public class Handler implements RequestHandler<APIGatewayV2WebSocketEvent, Objec
 
     private boolean isBarOrder(String category) {
         return List.of(
-                "SOFT DRINKS", "Säfte / Juices", "Heiße Getränke / Hot Drinks",
+                "SOFT DRINKS", "SÄFTE / JUICES", "HEIßE GETRÄNKE / HOT DRINKS",
                 "BIER / BEER", "LONG DRINKS", "WEISSWEINE / WHITE WINES",
                 "ROT WEINE / RED WINES", "ROSEWEIN / ROSE WINES",
                 "WEINE AUS ITALIEN / WEIN FROM ITALY",
